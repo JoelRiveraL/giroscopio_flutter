@@ -4,29 +4,45 @@ import '../services/communication_service.dart';
 import '../utils/gyro_helper.dart';
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
   final CommunicationService _communicationService =
-      CommunicationService('ws://192.168.137.54:8765');
+      CommunicationService('ws://192.168.137.1:8765');
   final GyroHelper _gyroHelper = GyroHelper();
 
   @override
   void initState() {
     super.initState();
+    // Variable para controlar el tiempo entre comandos
+    DateTime lastCommandTime = DateTime.now();
+
     _gyroHelper.startListening((GyroscopeEvent event) {
       // Disminuir la sensibilidad ajustando el umbral
-      double sensitivityThreshold = 0.5; // Ajusta este valor para cambiar la sensibilidad
+      double sensitivityThreshold =
+          4.0; // Cambia este valor según la sensibilidad deseada
+      Duration commandCooldown =
+          const Duration(seconds: 1); // Tiempo mínimo entre comandos
 
-      // Mapear los datos del giroscopio a comandos
-      if (event.x > sensitivityThreshold) {
-        _communicationService.sendCommand('open_browser');
-      } else if (event.y > sensitivityThreshold) {
-        _communicationService.sendCommand('open_word');
-      } else if (event.z > sensitivityThreshold) {
-        _communicationService.sendCommand('play_music');
+      // Verificar si ha pasado suficiente tiempo desde el último comando
+      if (DateTime.now().difference(lastCommandTime) >= commandCooldown) {
+        if (event.x > sensitivityThreshold) {
+          _communicationService.sendCommand('open_browser');
+          lastCommandTime =
+              DateTime.now(); // Actualizar el tiempo del último comando
+        } else if (event.y > sensitivityThreshold) {
+          _communicationService.sendCommand('open_word');
+          lastCommandTime =
+              DateTime.now(); // Actualizar el tiempo del último comando
+        } else if (event.z > sensitivityThreshold) {
+          _communicationService.sendCommand('play_music');
+          lastCommandTime =
+              DateTime.now(); // Actualizar el tiempo del último comando
+        }
       }
     });
   }
@@ -41,20 +57,36 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Gyroscope Control'),
+        title: const Text('Gyroscope Control'),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Move your device to control the computer'),
-            SizedBox(height: 20),
+            const Text('Move your device to control the computer'),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
                 // Enviar el comando 'open_browser' al servidor
                 _communicationService.sendCommand('open_browser');
               },
-              child: Text('Open Browser'),
+              child: const Text('Open Browser'),
+            ),
+             const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                // Enviar el comando 'open_word' al servidor
+                _communicationService.sendCommand('open_word');
+              },
+              child: const Text('Open Word'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                // Enviar el comando 'play_music' al servidor
+                _communicationService.sendCommand('play_music');
+              },
+              child: const Text('Play Music'),
             ),
           ],
         ),
